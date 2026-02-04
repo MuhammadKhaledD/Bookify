@@ -1,0 +1,685 @@
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ShoppingCart, User, Ticket, Menu, LogOut, X, Gift, Package, Calendar, Store, Award, Info, ChevronDown, Settings, BarChart3, Tag, Bell, Users } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { logout } from "@/store/slices/authSlice";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+  isAdmin,
+  isOrganizer,
+  isUser,
+  canAccessOrganizer,
+  canAccessAdmin,
+  canAddToCart,
+} from "@/utils/roles";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import gsap from "gsap";
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  description: string;
+}
+
+const navItems: NavItem[] = [
+  {
+    href: "/events",
+    label: "Events",
+    icon: Calendar,
+    description: "Discover and book tickets to exciting events",
+  },
+  {
+    href: "/store",
+    label: "Store",
+    icon: Store,
+    description: "Shop exclusive merchandise and products",
+  },
+  {
+    href: "/rewards",
+    label: "Rewards",
+    icon: Gift,
+    description: "Earn and redeem loyalty points",
+  },
+  {
+    href: "/orders",
+    label: "Orders",
+    icon: Package,
+    description: "View your order history and tracking",
+  },
+  {
+    href: "/about",
+    label: "About",
+    icon: Info,
+    description: "Learn more about Bookify",
+  },
+];
+
+export const Header = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const dispatch = useAppDispatch();
+  const { isAuthenticated, user, roles } = useAppSelector((state) => state.auth);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Filter nav items based on roles
+  const filteredNavItems = useMemo(() => {
+    return navItems.filter((item) => {
+      // Admin specific navigation
+      if (isAdmin(roles)) {
+        // Admins primarily need management links. 
+        // We exclude consumer-facing reward/order links.
+        // We include Events/Store so they can view the public face of the site.
+        if (["/rewards", "/orders"].includes(item.href)) {
+          return false;
+        }
+        return true;
+      }
+
+      // Organizer specific navigation
+      if (isOrganizer(roles)) {
+        // Organizers see public pages + their dashboard links (handled separately in the render)
+        // They don't need User "Orders" or "Rewards" unless they are buying (which they can't/shouldn't?)
+        // Requirement: "organizer user can see the normal pages... + the pages that appears to the organizer"
+        // Usually Organizers also act as potential Users, but User said "organizer... set limit... admin can't buy".
+        // Let's assume Organizers are purely managing or viewing.
+        // But often Organizers ARE Users.
+        // I will hide Rewards/Orders from Organizers if they don't have "User" role explicitly?
+        // roles is an array.
+        if (!isUser(roles) && ["/rewards", "/orders"].includes(item.href)) {
+          return false;
+        }
+        return true;
+      }
+
+      // Regular User (or Not Logged In)
+      // Public pages - accessible to all
+      if (["/events", "/store", "/about"].includes(item.href)) {
+        return true;
+      }
+
+      // Rewards and Orders require User role
+      if (["/rewards", "/orders"].includes(item.href)) {
+        return isAuthenticated && isUser(roles);
+      }
+
+      return false;
+    });
+  }, [isAuthenticated, roles]);
+
+  // Check permissions
+  const showCart = isAuthenticated && canAddToCart(roles);
+  const showOrganizerDashboard = isAuthenticated && canAccessOrganizer(roles);
+  const showAdminDashboard = isAuthenticated && canAccessAdmin(roles);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setDropdownOpen(false);
+  }, [location.pathname]);
+
+  // Animate dropdown menu
+  useEffect(() => {
+    if (!dropdownRef.current || !menuRef.current) return;
+
+    const cleanupFunctions: (() => void)[] = [];
+
+    if (dropdownOpen) {
+      // Animate menu container
+      gsap.fromTo(
+        menuRef.current,
+        { opacity: 0, y: -10, scale: 0.95 },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.2,
+          ease: "power2.out",
+        }
+      );
+
+      // Stagger menu items with enhanced animations
+      const items = menuRef.current.querySelectorAll("[data-menu-item]");
+      gsap.fromTo(
+        items,
+        {
+          opacity: 0,
+          x: -15,
+          scale: 0.95,
+        },
+        {
+          opacity: 1,
+          x: 0,
+          scale: 1,
+          duration: 0.25,
+          stagger: 0.04,
+          ease: "back.out(1.2)",
+          delay: 0.1,
+        }
+      );
+
+      // Add hover animations to each item
+      items.forEach((item) => {
+        const button = item as HTMLElement;
+        const icon = button.querySelector("div[class*='p-2']");
+        const textContainer = button.querySelector("div[class*='flex-1']");
+
+        const handleMouseEnter = () => {
+          gsap.to(button, {
+            x: 4,
+            duration: 0.2,
+            ease: "power2.out",
+          });
+          if (icon) {
+            gsap.to(icon, {
+              scale: 1.1,
+              rotation: 5,
+              duration: 0.2,
+              ease: "back.out(1.2)",
+            });
+          }
+          if (textContainer) {
+            gsap.to(textContainer, {
+              x: 2,
+              duration: 0.2,
+              ease: "power2.out",
+            });
+          }
+        };
+
+        const handleMouseLeave = () => {
+          gsap.to(button, {
+            x: 0,
+            duration: 0.2,
+            ease: "power2.out",
+          });
+          if (icon) {
+            gsap.to(icon, {
+              scale: 1,
+              rotation: 0,
+              duration: 0.2,
+              ease: "power2.out",
+            });
+          }
+          if (textContainer) {
+            gsap.to(textContainer, {
+              x: 0,
+              duration: 0.2,
+              ease: "power2.out",
+            });
+          }
+        };
+
+        button.addEventListener("mouseenter", handleMouseEnter);
+        button.addEventListener("mouseleave", handleMouseLeave);
+
+        // Store cleanup function
+        cleanupFunctions.push(() => {
+          button.removeEventListener("mouseenter", handleMouseEnter);
+          button.removeEventListener("mouseleave", handleMouseLeave);
+          gsap.killTweensOf(button);
+          if (icon) gsap.killTweensOf(icon);
+          if (textContainer) gsap.killTweensOf(textContainer);
+        });
+      });
+    }
+
+    // Cleanup function
+    return () => {
+      cleanupFunctions.forEach(cleanup => cleanup());
+      if (menuRef.current) {
+        const items = menuRef.current.querySelectorAll("[data-menu-item]");
+        items.forEach((item) => {
+          gsap.killTweensOf(item);
+        });
+      }
+    };
+  }, [dropdownOpen]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    if (dropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownOpen]);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/");
+    setMobileMenuOpen(false);
+  };
+
+  const handleNavClick = () => {
+    setMobileMenuOpen(false);
+    setDropdownOpen(false);
+  };
+
+  const isActivePath = (path: string) => location.pathname === path;
+
+  const handleNavigate = (href: string) => {
+    setDropdownOpen(false);
+    setTimeout(() => {
+      navigate(href);
+    }, 300);
+  };
+
+  return (
+    <header
+      className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-shadow duration-300"
+    >
+      <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2 group" onClick={handleNavClick}>
+            <Ticket className="h-8 w-8 text-primary transition-transform group-hover:scale-110" />
+            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              Bookify
+            </span>
+          </Link>
+
+          {/* Desktop Navigation with Dropdown */}
+          <div className="hidden md:flex items-center gap-6">
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md transition-all font-medium ${dropdownOpen
+                  ? "text-primary bg-primary/10"
+                  : "text-foreground hover:text-primary hover:bg-muted"
+                  }`}
+              >
+                <span>Menu</span>
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""
+                    }`}
+                />
+              </button>
+
+              {dropdownOpen && (
+                <div
+                  ref={menuRef}
+                  className="absolute top-full left-0 mt-2 w-80 bg-popover border border-border rounded-lg shadow-lg overflow-hidden"
+                  onMouseLeave={() => setDropdownOpen(false)}
+                >
+                  <div className="p-2">
+                    {filteredNavItems.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = isActivePath(item.href);
+                      return (
+                        <button
+                          key={item.href}
+                          data-menu-item
+                          onClick={() => handleNavigate(item.href)}
+                          className={`w-full flex items-start gap-3 p-3 rounded-md transition-all text-left group ${isActive
+                            ? "bg-primary/10 text-primary"
+                            : "hover:bg-muted text-foreground"
+                            }`}
+                        >
+                          <div
+                            className={`p-2 rounded-md transition-colors ${isActive
+                              ? "bg-primary/20 text-primary"
+                              : "bg-muted group-hover:bg-primary/10 text-muted-foreground group-hover:text-primary"
+                              }`}
+                          >
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-sm">{item.label}</div>
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              {item.description}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                    {showOrganizerDashboard && (
+                      <>
+                        <button
+                          data-menu-item
+                          onClick={() => handleNavigate("/org/dashboard")}
+                          className={`w-full flex items-start gap-3 p-3 rounded-md transition-all text-left group ${isActivePath("/org/dashboard")
+                            ? "bg-primary/10 text-primary"
+                            : "hover:bg-muted text-foreground"
+                            }`}
+                        >
+                          <div
+                            className={`p-2 rounded-md transition-colors ${isActivePath("/org/dashboard")
+                              ? "bg-primary/20 text-primary"
+                              : "bg-muted group-hover:bg-primary/10 text-muted-foreground group-hover:text-primary"
+                              }`}
+                          >
+                            <Settings className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-sm">Organizer Dashboard</div>
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              Manage your events and products
+                            </div>
+                          </div>
+                        </button>
+                        <button
+                          data-menu-item
+                          onClick={() => handleNavigate("/org/statistics")}
+                          className={`w-full flex items-start gap-3 p-3 rounded-md transition-all text-left group ${isActivePath("/org/statistics")
+                            ? "bg-primary/10 text-primary"
+                            : "hover:bg-muted text-foreground"
+                            }`}
+                        >
+                          <div
+                            className={`p-2 rounded-md transition-colors ${isActivePath("/org/statistics")
+                              ? "bg-primary/20 text-primary"
+                              : "bg-muted group-hover:bg-primary/10 text-muted-foreground group-hover:text-primary"
+                              }`}
+                          >
+                            <BarChart3 className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-sm">Organizer Statistics</div>
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              View event analytics and revenue
+                            </div>
+                          </div>
+                        </button>
+                      </>
+                    )}
+                    {showAdminDashboard && (
+                      <button
+                        data-menu-item
+                        onClick={() => handleNavigate("/admin/dashboard")}
+                        className={`w-full flex items-start gap-3 p-3 rounded-md transition-all text-left group ${isActivePath("/admin/dashboard")
+                          ? "bg-primary/10 text-primary"
+                          : "hover:bg-muted text-foreground"
+                          }`}
+                      >
+                        <div
+                          className={`p-2 rounded-md transition-colors ${isActivePath("/admin/dashboard")
+                            ? "bg-primary/20 text-primary"
+                            : "bg-muted group-hover:bg-primary/10 text-muted-foreground group-hover:text-primary"
+                            }`}
+                        >
+                          <BarChart3 className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-sm">Admin Dashboard</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            Manage platform and users
+                          </div>
+                        </div>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Actions */}
+          <div className="flex items-center gap-3">
+            {/* Theme Toggle - Desktop */}
+            <div className="hidden md:block">
+              <ThemeToggle />
+            </div>
+
+            {isAuthenticated ? (
+              <>
+                {showCart && (
+                  <Button variant="ghost" size="icon" className="hidden md:flex" asChild>
+                    <Link to="/cart">
+                      <ShoppingCart className="h-5 w-5" />
+                    </Link>
+                  </Button>
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="hidden md:flex">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user?.profilePicture} alt={user?.name || user?.userName} />
+                        <AvatarFallback>
+                          {user?.name?.charAt(0) || user?.userName?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 bg-popover">
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">
+                          <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent font-bold">
+                            {user?.name || user?.userName}
+                          </span>
+                        </p>
+                        <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile">My Profile</Link>
+                    </DropdownMenuItem>
+                    {isUser(roles) && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link to="/orders">Orders</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to="/rewards">Rewards</Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    {showOrganizerDashboard && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link to="/org/dashboard">Organizer Dashboard</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to="/org/statistics">Organizer Statistics</Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    {showAdminDashboard && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link to="/admin/dashboard">Admin Dashboard</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to="/admin/payments">Payment Verification</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to="/admin/statistics">Statistics</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to="/admin/categories">Manage Categories</Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" className="hidden md:flex" asChild>
+                  <Link to="/login">
+                    <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent font-bold">Log In</span>
+                  </Link>
+                </Button>
+                <Button size="sm" className="hidden md:flex bg-gradient-to-r from-primary to-secondary border-0 hover:opacity-90 transition-opacity" asChild>
+                  <Link to="/signup">Sign Up</Link>
+                </Button>
+              </>
+            )}
+
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden py-4 border-t border-border animate-fade-in">
+            <div className="flex flex-col gap-2">
+              {filteredNavItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    onClick={handleNavClick}
+                    className={`flex items-center gap-3 p-3 rounded-md transition-colors font-medium ${isActivePath(item.href)
+                      ? "text-primary bg-primary/10"
+                      : "text-foreground hover:text-primary hover:bg-muted"
+                      }`}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <div>
+                      <div>{item.label}</div>
+                      <div className="text-xs text-muted-foreground">{item.description}</div>
+                    </div>
+                  </Link>
+                );
+              })}
+
+              {isAuthenticated ? (
+                <>
+                  {showCart && (
+                    <Link
+                      to="/cart"
+                      onClick={handleNavClick}
+                      className={`flex items-center gap-3 p-3 rounded-md transition-colors font-medium ${isActivePath("/cart") ? "text-primary bg-primary/10" : "text-foreground hover:text-primary hover:bg-muted"}`}
+                    >
+                      <ShoppingCart className="h-5 w-5" />
+                      Cart
+                    </Link>
+                  )}
+                  <Link
+                    to="/profile"
+                    onClick={handleNavClick}
+                    className={`flex items-center gap-3 p-3 rounded-md transition-colors font-medium ${isActivePath("/profile") ? "text-primary bg-primary/10" : "text-foreground hover:text-primary hover:bg-muted"}`}
+                  >
+                    <User className="h-5 w-5" />
+                    Profile
+                  </Link>
+
+                  {/* Organizer Links */}
+                  {showOrganizerDashboard && (
+                    <>
+                      <div className="border-t border-border mt-2 pt-2">
+                        <p className="text-xs text-muted-foreground px-3 py-1">Organizer</p>
+                      </div>
+                      <Link
+                        to="/org/dashboard"
+                        onClick={handleNavClick}
+                        className={`flex items-center gap-3 p-3 rounded-md transition-colors font-medium ${isActivePath("/org/dashboard") ? "text-primary bg-primary/10" : "text-foreground hover:text-primary hover:bg-muted"}`}
+                      >
+                        <Settings className="h-5 w-5" />
+                        Organizer Dashboard
+                      </Link>
+                      <Link
+                        to="/org/statistics"
+                        onClick={handleNavClick}
+                        className={`flex items-center gap-3 p-3 rounded-md transition-colors font-medium ${isActivePath("/org/statistics") ? "text-primary bg-primary/10" : "text-foreground hover:text-primary hover:bg-muted"}`}
+                      >
+                        <BarChart3 className="h-5 w-5" />
+                        Organizer Statistics
+                      </Link>
+                    </>
+                  )}
+
+                  {/* Admin Links */}
+                  {showAdminDashboard && (
+                    <>
+                      <div className="border-t border-border mt-2 pt-2">
+                        <p className="text-xs text-muted-foreground px-3 py-1">Admin</p>
+                      </div>
+                      <Link
+                        to="/admin/dashboard"
+                        onClick={handleNavClick}
+                        className={`flex items-center gap-3 p-3 rounded-md transition-colors font-medium ${isActivePath("/admin/dashboard") ? "text-primary bg-primary/10" : "text-foreground hover:text-primary hover:bg-muted"}`}
+                      >
+                        <BarChart3 className="h-5 w-5" />
+                        Admin Dashboard
+                      </Link>
+                      <Link
+                        to="/admin/statistics"
+                        onClick={handleNavClick}
+                        className={`flex items-center gap-3 p-3 rounded-md transition-colors font-medium ${isActivePath("/admin/statistics") ? "text-primary bg-primary/10" : "text-foreground hover:text-primary hover:bg-muted"}`}
+                      >
+                        <BarChart3 className="h-5 w-5" />
+                        Admin Statistics
+                      </Link>
+                      <Link
+                        to="/admin/categories"
+                        onClick={handleNavClick}
+                        className={`flex items-center gap-3 p-3 rounded-md transition-colors font-medium ${isActivePath("/admin/categories") ? "text-primary bg-primary/10" : "text-foreground hover:text-primary hover:bg-muted"}`}
+                      >
+                        <Tag className="h-5 w-5" />
+                        Manage Categories
+                      </Link>
+                    </>
+                  )}
+
+                  <div className="flex items-center justify-between py-2 border-t border-border mt-2 pt-4">
+                    <span className="text-muted-foreground">Theme</span>
+                    <ThemeToggle />
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={handleLogout} className="w-full justify-start text-destructive hover:text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between py-2 border-t border-border mt-2 pt-4">
+                    <span className="text-muted-foreground">Theme</span>
+                    <ThemeToggle />
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button variant="ghost" size="sm" className="flex-1" asChild>
+                      <Link to="/login" onClick={handleNavClick}>
+                        <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent font-bold">Log In</span>
+                      </Link>
+                    </Button>
+                    <Button size="sm" className="flex-1 bg-gradient-to-r from-primary to-secondary border-0 hover:opacity-90 transition-opacity" asChild>
+                      <Link to="/signup" onClick={handleNavClick}>Sign Up</Link>
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </nav>
+    </header>
+  );
+};

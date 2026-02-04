@@ -1,0 +1,21 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bookify-Backend", "Bookify-Backend.csproj", "{BCEB777A-DC14-4F20-8529-214F7396FB40}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DB7A1764-C5E7-46DB-A70F-D3FEBCC655EC}"
+	ProjectSection(SolutionItems) = preProject
+		compose.yaml = compose.yaml
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BCEB777A-DC14-4F20-8529-214F7396FB40}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCEB777A-DC14-4F20-8529-214F7396FB40}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCEB777A-DC14-4F20-8529-214F7396FB40}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCEB777A-DC14-4F20-8529-214F7396FB40}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

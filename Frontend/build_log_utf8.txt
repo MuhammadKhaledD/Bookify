@@ -1,0 +1,123 @@
+﻿
+> vite_react_shadcn_ts@0.0.0 build
+> vite build
+
+[36mvite v5.4.19 [32mbuilding for production...[36m[39m
+transforming...
+node.exe : 
+Browserslist: 
+browsers data 
+(caniuse-lite) is 6 
+months old. Please 
+run:
+At line:1 char:1
++ & "C:\Program Files
+\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (Browser   
+ slist: b...ld. P    
+lease run::Strin    
+g) [], RemoteExc    
+eption
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+  npx update-browsers
+list-db@latest
+  Why you should do 
+it regularly: https:/
+/github.com/browsersl
+ist/update-db#readme
+[32mظ£ô[39m 85 modules transformed.
+[31mx[39m Build 
+failed in 1.50s
+[31merror during 
+build:
+[31m[vite]: Rollup 
+failed to resolve 
+import "jwt-decode" 
+from "C:/Users/ahmed/
+Documents/GitHub/book
+ify-ticket-shop-rewar
+ds/src/store/slices/a
+uthSlice.ts".
+This is most likely 
+unintended because 
+it can break your 
+application at 
+runtime.
+If you do want to 
+externalize this 
+module explicitly 
+add it to
+`build.rollupOptions.
+external`[31m
+    at viteWarn (file
+:///C:/Users/ahmed/Do
+cuments/GitHub/bookif
+y-ticket-shop-rewards
+/node_modules/vite/di
+st/node/chunks/dep-C6
+uTJdX2.js:65839:17)
+    at onwarn (file:/
+//C:/Users/ahmed/Docu
+ments/GitHub/bookify-
+ticket-shop-rewards/n
+ode_modules/@vitejs/p
+lugin-react-swc/index
+.js:90:7)
+    at 
+onRollupWarning (file
+:///C:/Users/ahmed/Do
+cuments/GitHub/bookif
+y-ticket-shop-rewards
+/node_modules/vite/di
+st/node/chunks/dep-C6
+uTJdX2.js:65869:5)
+    at onwarn (file:/
+//C:/Users/ahmed/Docu
+ments/GitHub/bookify-
+ticket-shop-rewards/n
+ode_modules/vite/dist
+/node/chunks/dep-C6uT
+JdX2.js:65534:7)
+    at file:///C:/Use
+rs/ahmed/Documents/Gi
+tHub/bookify-ticket-s
+hop-rewards/node_modu
+les/rollup/dist/es/sh
+ared/node-entry.js:19
+393:13
+    at Object.logger 
+[as onLog] (file:///C
+:/Users/ahmed/Documen
+ts/GitHub/bookify-tic
+ket-shop-rewards/node
+_modules/rollup/dist/
+es/shared/node-entry.
+js:21119:9)
+    at ModuleLoader.h
+andleInvalidResolvedI
+d (file:///C:/Users/a
+hmed/Documents/GitHub
+/bookify-ticket-shop-
+rewards/node_modules/
+rollup/dist/es/shared
+/node-entry.js:20008:
+26)
+    at file:///C:/Use
+rs/ahmed/Documents/Gi
+tHub/bookify-ticket-s
+hop-rewards/node_modu
+les/rollup/dist/es/sh
+ared/node-entry.js:19
+966:26[39m
